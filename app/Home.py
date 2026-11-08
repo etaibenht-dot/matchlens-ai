@@ -30,6 +30,7 @@ def load_data():
     )
 
 team, features = load_data()
+match_dates = pd.read_csv(ROOT / "data" / "input" / "match_dates.csv", parse_dates=["match_date"])
 match_id = st.selectbox(
     "Select match",
     features.match_id.tolist(),
@@ -38,10 +39,13 @@ match_id = st.selectbox(
 selected = team[team.match_id == match_id]
 home = selected[selected.side == "home"].iloc[0]
 away = selected[selected.side == "away"].iloc[0]
+match_date = match_dates.loc[match_dates.match_id == match_id, "match_date"].iloc[0]
+formatted_date = match_date.strftime("%d/%m/%Y")
 
 st.markdown(f"""<div class="hero"><div style="font-size:14px;opacity:.8">MATCHLENS AI • POST-MATCH ANALYSIS</div>
 <div style="font-size:32px;font-weight:700;margin-top:4px">{home.team} {int(home.goals)} – {int(away.goals)} {away.team}</div>
-<div style="opacity:.85;margin-top:5px">Explainable analytics from source-backed match data</div></div>""", unsafe_allow_html=True)
+<div style="opacity:.9;margin-top:5px;font-size:17px">{formatted_date}</div>
+<div style="opacity:.78;margin-top:4px">Explainable analytics from source-backed match data</div></div>""", unsafe_allow_html=True)
 
 
 def team_panel(column, row, color, side_label):
@@ -56,17 +60,17 @@ def team_panel(column, row, color, side_label):
         with st.container(border=True):
             a, b, c = st.columns(3)
             a.metric("Goals", int(row.goals))
-            b.metric("Shots", int(row.shots) if pd.notna(row.shots) else "N/A")
-            c.metric("On target", int(row.shots_on_target) if pd.notna(row.shots_on_target) else "N/A")
+            b.metric("Shots", int(row.shots) if pd.notna(row.shots) else "No data")
+            c.metric("On target", int(row.shots_on_target) if pd.notna(row.shots_on_target) else "No data")
             st.divider()
             a, b, c = st.columns(3)
-            a.metric("Shot accuracy", f"{row.shot_accuracy:.1%}" if pd.notna(row.shot_accuracy) else "N/A")
-            b.metric("Conversion", f"{row.shot_conversion:.1%}" if pd.notna(row.shot_conversion) else "N/A")
-            c.metric("Control score", f"{row.control_score:.1f}" if pd.notna(row.control_score) else "N/A")
+            a.metric("Shot accuracy", f"{row.shot_accuracy:.1%}" if pd.notna(row.shot_accuracy) else "No data")
+            b.metric("Conversion", f"{row.shot_conversion:.1%}" if pd.notna(row.shot_conversion) else "No data")
+            c.metric("Control score", f"{row.control_score:.1f}" if pd.notna(row.control_score) else "No data")
             st.caption(
-                "Possession: " + (f"{row.possession:.1f}%" if pd.notna(row.possession) else "N/A")
-                + "  |  Pass accuracy: " + (f"{row.pass_accuracy:.1f}%" if pd.notna(row.pass_accuracy) else "N/A")
-                + "  |  xG: " + (f"{row.xg:.2f}" if pd.notna(row.xg) else "N/A")
+                "Possession: " + (f"{row.possession:.1f}%" if pd.notna(row.possession) else "No data")
+                + "  |  Pass accuracy: " + (f"{row.pass_accuracy:.1f}%" if pd.notna(row.pass_accuracy) else "No data")
+                + "  |  xG: " + (f"{row.xg:.2f}" if pd.notna(row.xg) else "No data")
             )
 
 left, right = st.columns(2, gap="large")
@@ -110,4 +114,31 @@ st.markdown('<div class="small-note">Lower distance means greater statistical si
 
 with st.expander("Data provenance and limitations"):
     st.write(f"Primary source label: **{home.source}**")
-    st.write("Missing values remain NULL and are shown as N/A. Retrospective xG values must remain labelled by provider. Similarity results are exploratory because the archive currently contains 20 matches.")
+
+    displayed_fields = {
+        "shots": [home.shots, away.shots],
+        "shots on target": [home.shots_on_target, away.shots_on_target],
+        "shot accuracy": [home.shot_accuracy, away.shot_accuracy],
+        "shot conversion": [home.shot_conversion, away.shot_conversion],
+        "Control Score": [home.control_score, away.control_score],
+        "possession": [home.possession, away.possession],
+        "pass accuracy": [home.pass_accuracy, away.pass_accuracy],
+        "xG": [home.xg, away.xg],
+    }
+    missing_fields = [
+        label for label, values in displayed_fields.items()
+        if any(pd.isna(value) for value in values)
+    ]
+
+    if missing_fields:
+        st.warning(
+            "Some statistics are unavailable for this match: "
+            + ", ".join(missing_fields)
+            + ". A reliable public figure was not found, so the app shows ‘No data’. "
+              "This does not mean the value was zero."
+        )
+
+    if pd.notna(home.xg) or pd.notna(away.xg):
+        st.write("xG values are provider-specific and may have been reconstructed after the match.")
+
+    st.write("Similar-match results are exploratory because the archive currently contains 20 matches.")
