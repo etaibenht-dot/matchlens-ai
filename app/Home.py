@@ -35,7 +35,7 @@ match_id = st.selectbox(
     features.match_id.tolist(),
     format_func=lambda x: features.loc[features.match_id == x, "match"].iloc[0],
 )
-selected = team[team.match_id == match_id].sort_values("side")
+selected = team[team.match_id == match_id]
 home = selected[selected.side == "home"].iloc[0]
 away = selected[selected.side == "away"].iloc[0]
 
@@ -43,18 +43,35 @@ st.markdown(f"""<div class="hero"><div style="font-size:14px;opacity:.8">MATCHLE
 <div style="font-size:32px;font-weight:700;margin-top:4px">{home.team} {int(home.goals)} – {int(away.goals)} {away.team}</div>
 <div style="opacity:.85;margin-top:5px">Explainable analytics from source-backed match data</div></div>""", unsafe_allow_html=True)
 
-left, right = st.columns(2)
-for col, row in [(left, home), (right, away)]:
-    with col:
-        st.subheader(row.team)
-        a,b,c = st.columns(3)
-        a.metric("Goals", int(row.goals))
-        b.metric("Shots", int(row.shots) if pd.notna(row.shots) else "N/A")
-        c.metric("On target", int(row.shots_on_target) if pd.notna(row.shots_on_target) else "N/A")
-        a,b,c = st.columns(3)
-        a.metric("Shot accuracy", f"{row.shot_accuracy:.1%}" if pd.notna(row.shot_accuracy) else "N/A")
-        b.metric("Conversion", f"{row.shot_conversion:.1%}" if pd.notna(row.shot_conversion) else "N/A")
-        c.metric("Control score", f"{row.control_score:.1f}" if pd.notna(row.control_score) else "N/A")
+
+def team_panel(column, row, color, side_label):
+    with column:
+        st.markdown(
+            f"""<div style="border:2px solid {color};border-radius:16px;padding:16px 18px 8px;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:700;color:{color};letter-spacing:.08em">{side_label}</div>
+            <div style="font-size:28px;font-weight:750;margin:2px 0 14px">{row.team}</div>
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        with st.container(border=True):
+            a, b, c = st.columns(3)
+            a.metric("Goals", int(row.goals))
+            b.metric("Shots", int(row.shots) if pd.notna(row.shots) else "N/A")
+            c.metric("On target", int(row.shots_on_target) if pd.notna(row.shots_on_target) else "N/A")
+            st.divider()
+            a, b, c = st.columns(3)
+            a.metric("Shot accuracy", f"{row.shot_accuracy:.1%}" if pd.notna(row.shot_accuracy) else "N/A")
+            b.metric("Conversion", f"{row.shot_conversion:.1%}" if pd.notna(row.shot_conversion) else "N/A")
+            c.metric("Control score", f"{row.control_score:.1f}" if pd.notna(row.control_score) else "N/A")
+            st.caption(
+                "Possession: " + (f"{row.possession:.1f}%" if pd.notna(row.possession) else "N/A")
+                + "  |  Pass accuracy: " + (f"{row.pass_accuracy:.1f}%" if pd.notna(row.pass_accuracy) else "N/A")
+                + "  |  xG: " + (f"{row.xg:.2f}" if pd.notna(row.xg) else "N/A")
+            )
+
+left, right = st.columns(2, gap="large")
+team_panel(left, home, "#1f77b4", "HOME / FIRST-LISTED TEAM")
+team_panel(right, away, "#ff7f0e", "AWAY / SECOND-LISTED TEAM")
 
 st.subheader("Match comparison")
 metric_map = {
