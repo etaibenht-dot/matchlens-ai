@@ -24,28 +24,53 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    return (
-        pd.read_parquet(PROCESSED_DIR / "match_team_metrics.parquet"),
-        pd.read_parquet(PROCESSED_DIR / "match_features.parquet"),
-    )
+    team = pd.read_parquet(PROCESSED_DIR / "match_team_metrics.parquet")
+    features = pd.read_parquet(PROCESSED_DIR / "match_features.parquet")
+    catalog = pd.read_csv(ROOT / "data" / "input" / "match_catalog.csv", parse_dates=["match_date"])
+    return team, features.merge(catalog, on="match_id", how="left"), catalog
 
-team, features = load_data()
-match_dates = pd.read_csv(ROOT / "data" / "input" / "match_dates.csv", parse_dates=["match_date"])
+team, features, catalog = load_data()
+
+st.title("MatchLens AI")
+st.caption("Explainable football analytics across iconic and weekly matches")
+
+filter_1, filter_2 = st.columns(2)
+with filter_1:
+    type_options = ["All matches"] + sorted(features["match_type"].dropna().unique().tolist())
+    selected_type = st.selectbox("Match collection", type_options)
+
+filtered = features.copy()
+if selected_type != "All matches":
+    filtered = filtered[filtered["match_type"] == selected_type]
+
+with filter_2:
+    competition_options = ["All competitions"] + sorted(filtered["competition"].dropna().unique().tolist())
+    selected_competition = st.selectbox("Competition", competition_options)
+
+if selected_competition != "All competitions":
+    filtered = filtered[filtered["competition"] == selected_competition]
+
+if filtered.empty:
+    st.warning("No matches are available for the selected filters.")
+    st.stop()
+
 match_id = st.selectbox(
     "Select match",
-    features.match_id.tolist(),
-    format_func=lambda x: features.loc[features.match_id == x, "match"].iloc[0],
+    filtered.match_id.tolist(),
+    format_func=lambda x: filtered.loc[filtered.match_id == x, "match"].iloc[0],
 )
+selected_feature = features[features.match_id == match_id].iloc[0]
 selected = team[team.match_id == match_id]
 home = selected[selected.side == "home"].iloc[0]
 away = selected[selected.side == "away"].iloc[0]
-match_date = match_dates.loc[match_dates.match_id == match_id, "match_date"].iloc[0]
-formatted_date = match_date.strftime("%d/%m/%Y")
+formatted_date = pd.to_datetime(selected_feature.match_date).strftime("%d/%m/%Y")
+batch_text = f" • {selected_feature['batch']}" if pd.notna(selected_feature.get("batch")) else ""
 
-st.markdown(f"""<div class="hero"><div style="font-size:14px;opacity:.8">MATCHLENS AI • POST-MATCH ANALYSIS</div>
+st.markdown(f"""<div class="hero">
+<div style="font-size:14px;opacity:.82">{selected_feature.match_type.upper()} • {selected_feature.competition}{batch_text}</div>
 <div style="font-size:32px;font-weight:700;margin-top:4px">{home.team} {int(home.goals)} – {int(away.goals)} {away.team}</div>
 <div style="opacity:.9;margin-top:5px;font-size:17px">{formatted_date}</div>
-<div style="opacity:.78;margin-top:4px">Explainable analytics from source-backed match data</div></div>""", unsafe_allow_html=True)
+</div>""", unsafe_allow_html=True)
 
 
 def team_panel(column, row, color, side_label):
@@ -54,9 +79,7 @@ def team_panel(column, row, color, side_label):
             f"""<div style="border:2px solid {color};border-radius:16px;padding:16px 18px 8px;margin-bottom:10px;">
             <div style="font-size:12px;font-weight:700;color:{color};letter-spacing:.08em">{side_label}</div>
             <div style="font-size:28px;font-weight:750;margin:2px 0 14px">{row.team}</div>
-            </div>""",
-            unsafe_allow_html=True,
-        )
+            </div>""", unsafe_allow_html=True)
         with st.container(border=True):
             a, b, c = st.columns(3)
             a.metric("Goals", int(row.goals))
@@ -79,12 +102,10 @@ team_panel(right, away, "#ff7f0e", "AWAY / SECOND-LISTED TEAM")
 
 st.subheader("Match comparison")
 metric_map = {
-    "Possession": (home.possession, away.possession),
-    "Shots": (home.shots, away.shots),
+    "Possession": (home.possession, away.possession), "Shots": (home.shots, away.shots),
     "Shots on target": (home.shots_on_target, away.shots_on_target),
     "Pass accuracy": (home.pass_accuracy, away.pass_accuracy),
-    "Corners": (home.corners, away.corners),
-    "xG": (home.xg, away.xg),
+    "Corners": (home.corners, away.corners), "xG": (home.xg, away.xg),
 }
 available = {k:v for k,v in metric_map.items() if pd.notna(v[0]) and pd.notna(v[1])}
 fig = go.Figure()
@@ -98,47 +119,26 @@ st.info(build_match_narrative(home, away))
 st.caption("Control Score is a transparent project index based on possession, pass share and pass accuracy. xG remains provider-specific.")
 
 st.subheader("Similar matches")
-pipe, model, X, feature_cols = fit_similarity(features)
+_, model, X, feature_cols = fit_similarity(features)
 similar = similar_matches(match_id, features, model, X)
-selected_feature = features[features.match_id == match_id].iloc[0]
 rows=[]
 for _, candidate in similar.iterrows():
     candidate_feature = features[features.match_id == candidate.match_id].iloc[0]
-    rows.append({
-        "Match": candidate["match"],
-        "Distance": round(candidate["distance"], 3),
-        "Why similar": similarity_reasons(selected_feature, candidate_feature, feature_cols),
-    })
+    rows.append({"Match": candidate["match"], "Distance": round(candidate["distance"], 3),
+                 "Why similar": similarity_reasons(selected_feature, candidate_feature, feature_cols)})
 st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 st.markdown('<div class="small-note">Lower distance means greater statistical similarity after median imputation and StandardScaler normalization. It is not a probability.</div>', unsafe_allow_html=True)
 
 with st.expander("Data provenance and limitations"):
     st.write(f"Primary source label: **{home.source}**")
-
-    displayed_fields = {
-        "shots": [home.shots, away.shots],
-        "shots on target": [home.shots_on_target, away.shots_on_target],
-        "shot accuracy": [home.shot_accuracy, away.shot_accuracy],
-        "shot conversion": [home.shot_conversion, away.shot_conversion],
-        "Control Score": [home.control_score, away.control_score],
-        "possession": [home.possession, away.possession],
-        "pass accuracy": [home.pass_accuracy, away.pass_accuracy],
-        "xG": [home.xg, away.xg],
-    }
-    missing_fields = [
-        label for label, values in displayed_fields.items()
-        if any(pd.isna(value) for value in values)
-    ]
-
+    displayed_fields = {"shots":[home.shots,away.shots],"shots on target":[home.shots_on_target,away.shots_on_target],
+        "shot accuracy":[home.shot_accuracy,away.shot_accuracy],"shot conversion":[home.shot_conversion,away.shot_conversion],
+        "Control Score":[home.control_score,away.control_score],"possession":[home.possession,away.possession],
+        "pass accuracy":[home.pass_accuracy,away.pass_accuracy],"xG":[home.xg,away.xg]}
+    missing_fields = [label for label, values in displayed_fields.items() if any(pd.isna(value) for value in values)]
     if missing_fields:
-        st.warning(
-            "Some statistics are unavailable for this match: "
-            + ", ".join(missing_fields)
-            + ". A reliable public figure was not found, so the app shows ‘No data’. "
-              "This does not mean the value was zero."
-        )
-
+        st.warning("Some statistics are unavailable for this match: " + ", ".join(missing_fields)
+                   + ". A reliable public figure was not found, so the app shows ‘No data’. This does not mean the value was zero.")
     if pd.notna(home.xg) or pd.notna(away.xg):
         st.write("xG values are provider-specific and may have been reconstructed after the match.")
-
-    st.write("Similar-match results are exploratory because the archive currently contains 20 matches.")
+    st.write(f"Similarity results are exploratory because the archive currently contains {len(features)} matches.")
