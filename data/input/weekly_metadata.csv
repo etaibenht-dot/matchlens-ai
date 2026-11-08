@@ -1,0 +1,7 @@
+match_id,match_date,competition,season,round,match_type,weekly_batch,selection_window,source_url,analytical_reason
+21,2026-10-31,Premier League,2026/27,9,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.365scores.com/en-us/football/match/premier-league-7/brighton-manchester-city-38-110-7,High attacking volume and possession without a win
+22,2026-10-31,La Liga,2026/27,11,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.365scores.com/football/match/laliga-11/alaves-barcelona-132-168-11,Clear dominance and efficient finishing
+23,2026-10-31,Serie A,2026/27,10,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.365scores.com/en-us/football/match/serie-a-17/ac-milan-inter-milan-224-227-17,Derby result against possession shot volume and xG
+24,2026-10-31,Bundesliga,2026/27,8,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.365scores.com/en-us/football/match/bundesliga-25/bayer-leverkusen-stuttgart-333-338-25,Lower possession but higher-quality chances and away win
+25,2026-11-01,Ligue 1,2026/27,9,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.365scores.com/football/match/ligue-1-35/auxerre-strasbourg-476-479-35,Broad dominance across possession shots and corners
+26,2026-11-01,Israeli Premier League,2026/27,9,Weekly League,2026-W44,2026-10-31 to 2026-11-01,https://www.fotmob.com/matches/maccabi-petach-tikva-vs-hapoel-beer-sheva/2l3ec8,Second-half comeback with equal shot volume but superior chance quality

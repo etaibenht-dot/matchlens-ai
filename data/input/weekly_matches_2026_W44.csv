@@ -1,0 +1,7 @@
+Match ID,Home Team,Away Team,Score,Possession H,Possession A,Shots H,Shots A,On Target H,On Target A,Passes H,Passes A,Pass Accuracy H,Pass Accuracy A,Corners H,Corners A,Fouls H,Fouls A,Yellow H,Yellow A,Red H,Red A,xG H,xG A,Primary Source
+21,Manchester City,Brighton,0-1,62,38,21,7,6,3,,,,,,,,,,,,,1.64,1.00,365Scores
+22,Barcelona,Alaves,6-1,77,23,13,7,7,3,,,,,,,,,,,,,3.26,0.76,365Scores
+23,AC Milan,Inter Milan,3-1,43,57,7,19,4,8,409,525,88,88,3,11,8,14,2,1,0,0,0.62,1.68,365Scores / Diretta
+24,Bayer Leverkusen,Stuttgart,2-4,63,37,24,15,8,7,,,,,,,,,,,,,1.79,2.61,365Scores
+25,Strasbourg,Auxerre,5-1,64,36,19,6,6,2,579,324,,,5,0,11,18,0,4,0,0,,,365Scores / Statz.ai
+26,Maccabi Petah Tikva,Hapoel Beer Sheva,2-5,37,63,12,12,4,7,311,541,,,1,2,9,15,1,2,0,0,1.57,3.17,FotMob / SportPremi / PlayerStats
