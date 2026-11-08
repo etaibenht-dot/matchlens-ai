@@ -14,6 +14,9 @@ def main():
     features.to_parquet(PROCESSED_DIR/'match_features.parquet',index=False)
     quality.to_csv(PROCESSED_DIR/'quality_issues.csv',index=False)
     write_database(matches,core,sources,team,features,quality)
-    print(f'Loaded {len(matches)} matches; quality issues: {len(quality)}')
-
+    print(
+    f"Loaded {len(core)} matches; "
+    f"created {len(team)} team records; "
+    f"quality issues: {len(quality)}"
+)
 if __name__=='__main__': main()
