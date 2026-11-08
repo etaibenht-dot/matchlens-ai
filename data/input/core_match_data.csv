@@ -1,0 +1,21 @@
+Match ID,Home Team,Away Team,Score,Possession H,Possession A,Shots H,Shots A,On Target H,On Target A,Passes H,Passes A,Pass Accuracy H,Pass Accuracy A,Corners H,Corners A,Fouls H,Fouls A,Yellow H,Yellow A,Red H,Red A,xG H,xG A,Primary Source
+1,AC Milan,Liverpool,3-3,55.0,45.0,22,14,10,6,,,,,10,4,16.0,23.0,0.0,2.0,0.0,0.0,,,Opta Analyst / UEFA historical match data
+2,Barcelona,Manchester United,3-1,63.0,37.0,19,4,12,1,772.0,419.0,86.0,72.0,6,0,5.0,16.0,2.0,2.0,0.0,0.0,2.4,0.4,"UEFA + Opta Analyst, retrospective xG"
+3,Barcelona,Paris Saint-Germain,6-1,65.0,35.0,17,7,7,3,591.0,251.0,87.0,73.0,6,4,16.0,25.0,5.0,5.0,0.0,0.0,,,UEFA
+4,Barcelona,Bayern Munich,2-8,49.0,51.0,7,26,5,13,491.0,461.0,87.0,88.0,6,9,13.0,22.0,3.0,3.0,0.0,0.0,,,UEFA
+5,Italy,France,1-1,51.0,49.0,6,14,2,7,,,,,5,7,15.0,24.0,1.0,3.0,0.0,1.0,,,ESPN Match Archive / FIFA
+6,Brazil,Germany,1-7,47.0,53.0,18,14,13,12,449.0,516.0,85.0,84.0,7,5,11.0,14.0,1.0,0.0,0.0,0.0,2.02,3.43,FIFA / Sporting Life
+7,Argentina,France,3-3,46.5,40.6,21,10,9,5,648.0,516.0,84.0,81.0,6,5,26.0,19.0,4.0,3.0,0.0,0.0,,,FIFA
+8,Maccabi Haifa,Manchester United,3-0,,,8,18,6,5,,,,,1,11,17.0,11.0,0.0,3.0,0.0,0.0,,,UEFA historical report
+9,Real Madrid,Barcelona,2-3,43.0,57.0,22,16,14,9,390.0,539.0,85.0,89.0,7,4,13.0,8.0,3.0,2.0,1.0,0.0,3.0,2.3,StatMuse FC / Caley Graphics
+10,Real Madrid,Barcelona,2-5,49.0,51.0,19,14,6,8,404.0,433.0,85.1,86.8,9,5,15.0,15.0,,,0.0,1.0,1.72,2.54,BBC Sport + external xG provider
+11,Maccabi Haifa,Maccabi Tel Aviv,3-4,52.0,48.0,15,14,5,8,,,,,8,6,,,1.0,5.0,0.0,0.0,,,Kadario / Israel Football Association
+12,Maccabi Tel Aviv,Beitar Jerusalem,2-6,45.0,55.0,15,14,5,11,344.0,433.0,80.5,83.1,3,2,15.0,13.0,1.0,2.0,1.0,0.0,2.14,3.82,Mackolik
+13,Maccabi Netanya,Beitar Jerusalem,2-8,46.0,54.0,8,18,5,12,421.0,501.0,77.0,83.0,3,2,15.0,14.0,,,,,1.03,2.54,365Scores / Elbotola
+14,Hapoel Tel Aviv,Beitar Jerusalem,1-5,43.0,57.0,19,15,5,6,288.0,408.0,71.5,80.1,10,4,13.0,9.0,1.0,2.0,1.0,0.0,1.93,2.4,IddaaKolik / Sports Mole
+15,Spain,Argentina,1-0,65.1,34.9,20,2,12,0,853.0,464.0,89.4,76.9,9,4,21.0,25.0,0.0,4.0,0.0,1.0,1.94,0.22,FIFA / BBC / Ludistat
+16,Portugal,France,1-0,47.0,53.0,9,18,3,7,575.0,710.0,86.0,91.0,5,9,12.0,13.0,6.0,4.0,0.0,0.0,,,UEFA
+17,Barcelona,Arsenal,4-1,61.0,39.0,15,6,8,2,,,,,3,2,16.0,19.0,0.0,3.0,0.0,0.0,,,UEFA historical report
+18,Real Madrid,Barcelona,0-2,28.0,72.0,10,11,3,5,209.0,657.0,67.0,90.0,1,1,21.0,25.0,3.0,2.0,1.0,1.0,,,"UEFA-derived historical studies, approximate"
+19,Portugal,Spain,3-3,34.0,67.0,8,12,3,5,372.0,757.0,83.0,92.0,4,5,12.0,10.0,1.0,1.0,0.0,0.0,1.51,1.62,FBref / Sporting Life
+20,Juventus,Atletico Madrid,3-0,61.0,39.0,15,4,4,0,577.0,340.0,84.0,75.0,5,0,12.0,17.0,1.0,3.0,0.0,0.0,,,UEFA
