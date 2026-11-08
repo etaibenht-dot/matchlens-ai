@@ -1,0 +1,27 @@
+match_id,control_status,possession_status,display_mode,source_name,source_url,audit_note
+1,Unavailable,Unavailable,not_calculated,UEFA/ESPN,https://www.uefa.com/uefachampionsleague/match/80813--milan-vs-liverpool/,No verified possession and complete passing set found; ESPN 0%-0% is treated as missing rather than zero.
+2,Partial,Verified,possession,ESPN,https://www.espn.com/soccer/match/_/gameId/316520/manchester-united-barcelona,Possession verified; complete team passing totals were not confirmed in the audited source set.
+3,Verified,Verified,control_score,UEFA,https://www.uefa.com/uefachampionsleague/match/2019621--barcelona-vs-paris/statistics/,UEFA provides possession passes attempted passes completed and passing accuracy.
+4,Verified,Verified,control_score,UEFA,https://www.uefa.com/uefachampionsleague/match/2030146--barcelona-vs-bayern-munchen/statistics/,UEFA provides possession passes attempted passes completed and passing accuracy.
+5,Partial,Verified,possession,ESPN,https://www.espn.com/soccer/match/_/gameId/191983/france-italy,Possession verified; complete passing totals were unavailable in the audited source.
+6,Partial,Verified,possession,ESPN,https://www.espn.com/soccer/match/_/gameId/383242/germany-brazil,Possession verified; complete passing totals were not confirmed.
+7,Verified,Verified,control_score,FIFA,https://www.fifa.com/en/match-centre/match/17/255711/285077/400128145,FIFA provides official possession passes and completed passes.
+8,Unavailable,Unavailable,not_calculated,UEFA,https://www.uefa.com/uefachampionsleague/match/70133--maccabi-haifa-vs-man-utd/,UEFA verifies attempts and corners but does not provide possession or passing totals.
+9,Partial,Verified,possession,FootballCritic,https://www.footballcritic.com/la-liga-real-madrid-cf-fc-barcelona/match-stats/643497,Possession and pass-success percentage found; total passes were not confirmed in the audited page.
+10,Partial,Verified,possession,Forza Football,https://forzafootball.com/match/real-madrid-fc-barcelona-1218210034/stats,Possession verified; complete passing totals were not confirmed.
+11,Unavailable,Unavailable,not_calculated,Historical result sources,,No reliable full possession and passing dataset was confirmed during this audit.
+12,Unavailable,Unavailable,not_calculated,Historical result sources,https://footystats.org/israel/maccabi-tel-aviv-fc-vs-beitar-jerusalem-fc-h2h-stats,Result verified; no reliable complete possession and passing record was confirmed.
+13,Partial,Verified,possession,365Scores,https://www.365scores.com/football/match/premier-league-42/beitar-jerusalem-maccabi-netanya-559-560-42,Possession available; complete passing inputs for Control Score were not confirmed.
+14,Unavailable,Unavailable,not_calculated,Transfermarkt,https://www.transfermarkt.us/vergleich/vereineBegegnungen/statistik/3793_1017,Result verified; full possession and passing dataset not confirmed.
+15,Verified,Verified,control_score,WorldCupStats/FIFA,https://www.worldcupstats.app/match/m104,Possession and pass accuracy verified; full project inputs available in the dataset.
+16,Verified,Verified,control_score,UEFA,https://www.uefa.com/uefaeuro/match/2017907--portugal-vs-france/statistics/,UEFA provides possession passes attempted passes completed and passing accuracy.
+17,Partial,Verified,possession,ESPN,https://www.espn.com/soccer/match/_/gameId/290169/arsenal-barcelona,Possession verified; complete team passing totals were not confirmed.
+18,Partial,Verified,possession,ESPN,https://www.espn.com/soccer/match/_/gameId/315488/barcelona-real-madrid,Possession verified; complete team passing totals were not confirmed.
+19,Conflicting,Conflicting,not_calculated,ESPN/FootballCritic,https://www.espn.com/soccer/match/_/gameId/498199/spain-portugal,Possession differs materially by source (38%-62% vs 33%-67%); no value is displayed as verified.
+20,Verified,Verified,control_score,UEFA,https://www.uefa.com/uefachampionsleague/match/2026856--juventus-vs-atletico-de-madrid/statistics/,UEFA provides possession passes attempted passes completed and passing accuracy.
+21,Verified,Verified,control_score,xG.football,https://xg.football/matches/manchester-city-brighton-2026-10-31,Possession total passes and accurate passes are available.
+22,Verified,Verified,control_score,RubiScore,https://rubiscore.com/football/match/deportivo-alaves-barcelona-ampsKug,Possession total passes and accurate passes are available.
+23,Verified,Verified,control_score,ESPN,https://www.espn.com/soccer/match/_/gameId/401874795/internazionale-ac-milan,Possession total passes and accurate passes are available.
+24,Verified,Verified,control_score,ESPN/RubiScore,https://www.espn.com/soccer/match/_/gameId/401884753/vfb-stuttgart-bayer-leverkusen,Possession total passes and accurate passes are available.
+25,Verified,Verified,control_score,ESPN,https://www.espn.co.uk/football/match/_/gameId/401876414,Possession total passes and accurate passes are available.
+26,Partial,Verified,possession,SportPremi,https://sportpremi.com/match/maccabi-petah-tikva-vs-hapoel-beer-sheva-1555539,Possession verified; complete passing totals were not confirmed.

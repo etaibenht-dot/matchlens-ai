@@ -27,9 +27,10 @@ def load_data():
     team = pd.read_parquet(PROCESSED_DIR / "match_team_metrics.parquet")
     features = pd.read_parquet(PROCESSED_DIR / "match_features.parquet")
     catalog = pd.read_csv(ROOT / "data" / "input" / "match_catalog.csv", parse_dates=["match_date"])
-    return team, features.merge(catalog, on="match_id", how="left"), catalog
+    verification = pd.read_csv(ROOT / "data" / "input" / "metric_verification.csv")
+    return team, features.merge(catalog, on="match_id", how="left"), catalog, verification
 
-team, features, catalog = load_data()
+team, features, catalog, verification = load_data()
 
 st.title("MatchLens AI")
 st.caption("Explainable football analytics across iconic and weekly matches")
@@ -61,6 +62,7 @@ match_id = st.selectbox(
 )
 selected_feature = features[features.match_id == match_id].iloc[0]
 selected = team[team.match_id == match_id]
+verification_row = verification[verification.match_id == match_id].iloc[0]
 home = selected[selected.side == "home"].iloc[0]
 away = selected[selected.side == "away"].iloc[0]
 formatted_date = pd.to_datetime(selected_feature.match_date).strftime("%d/%m/%Y")
@@ -89,12 +91,23 @@ def team_panel(column, row, color, side_label):
             a, b, c = st.columns(3)
             a.metric("Shot accuracy", f"{row.shot_accuracy:.1%}" if pd.notna(row.shot_accuracy) else "No data")
             b.metric("Conversion", f"{row.shot_conversion:.1%}" if pd.notna(row.shot_conversion) else "No data")
-            c.metric("Control score", f"{row.control_score:.1f}" if pd.notna(row.control_score) else "No data")
+            display_mode = verification_row.display_mode
+            if display_mode == "control_score" and pd.notna(row.control_score):
+                control_label, control_value = "Control score", f"{row.control_score:.1f}"
+            elif display_mode == "possession" and pd.notna(row.possession):
+                control_label, control_value = "Possession", f"{row.possession:.1f}%"
+            else:
+                control_label, control_value = "Control", "Not calculated"
+            c.metric(control_label, control_value)
             st.caption(
-                "Possession: " + (f"{row.possession:.1f}%" if pd.notna(row.possession) else "No data")
+                "Possession: " + (f"{row.possession:.1f}%" if pd.notna(row.possession) and verification_row.possession_status == "Verified" else "Not verified")
                 + "  |  Pass accuracy: " + (f"{row.pass_accuracy:.1f}%" if pd.notna(row.pass_accuracy) else "No data")
                 + "  |  xG: " + (f"{row.xg:.2f}" if pd.notna(row.xg) else "No data")
             )
+            if display_mode == "possession":
+                st.caption("Full Control Score was not calculated because complete verified passing data was unavailable.")
+            elif display_mode == "not_calculated":
+                st.caption("Verified possession and passing inputs were not sufficient to calculate Control Score.")
 
 left, right = st.columns(2, gap="large")
 team_panel(left, home, "#1f77b4", "HOME / FIRST-LISTED TEAM")
@@ -131,6 +144,11 @@ st.markdown('<div class="small-note">Lower distance means greater statistical si
 
 with st.expander("Data provenance and limitations"):
     st.write(f"Primary source label: **{home.source}**")
+    st.write(f"Control-data audit: **{verification_row.control_status}**")
+    st.write(f"Verification source: **{verification_row.source_name}**")
+    if pd.notna(verification_row.source_url) and verification_row.source_url:
+        st.link_button("Open verification source", verification_row.source_url)
+    st.write(verification_row.audit_note)
     displayed_fields = {"shots":[home.shots,away.shots],"shots on target":[home.shots_on_target,away.shots_on_target],
         "shot accuracy":[home.shot_accuracy,away.shot_accuracy],"shot conversion":[home.shot_conversion,away.shot_conversion],
         "Control Score":[home.control_score,away.control_score],"possession":[home.possession,away.possession],
