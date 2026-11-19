@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import date, timedelta
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -22,12 +23,38 @@ def api_get(path, params):
     key = os.environ.get("API_FOOTBALL_KEY")
     if not key:
         raise RuntimeError("API_FOOTBALL_KEY is unavailable")
+
+    # Free plan limit is 10 calls per minute. Keep at least 6.5 seconds
+    # between calls and retry a 429 response without exposing the key.
+    if not hasattr(api_get, "last_call"):
+        api_get.last_call = 0.0
+
+    elapsed = time.monotonic() - api_get.last_call
+    if elapsed < 6.5:
+        time.sleep(6.5 - elapsed)
+
     request = Request(
         f"{BASE_URL}{path}?{urlencode(params)}",
         headers={"x-apisports-key": key, "Accept": "application/json", "User-Agent": "MatchLens-AI/1.0"},
     )
-    with urlopen(request, timeout=45) as response:
-        payload = json.load(response)
+
+    for attempt in range(3):
+        try:
+            with urlopen(request, timeout=45) as response:
+                api_get.last_call = time.monotonic()
+                payload = json.load(response)
+            break
+        except HTTPError as exc:
+            api_get.last_call = time.monotonic()
+            if exc.code != 429 or attempt == 2:
+                raise
+            retry_after = exc.headers.get("Retry-After")
+            wait_seconds = float(retry_after) if retry_after else 65.0
+            print(f"Rate limit reached. Waiting {wait_seconds:.0f} seconds before retry {attempt + 2}/3.")
+            time.sleep(wait_seconds)
+    else:
+        raise RuntimeError("API request retry loop ended unexpectedly")
+
     if payload.get("errors"):
         raise RuntimeError(f"API error: {payload['errors']}")
     return payload.get("response", [])
