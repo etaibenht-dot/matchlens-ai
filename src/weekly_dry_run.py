@@ -30,32 +30,38 @@ def api_get(path, params):
         payload = json.load(response)
     if payload.get("errors"):
         raise RuntimeError(f"API error: {payload['errors']}")
-    return payload.get("response", []), payload.get("paging", {}), payload.get("results", 0)
+    return payload.get("response", [])
 
 
-def current_league(config):
-    rows, _, _ = api_get("/leagues", {"country": config["country"], "current": "true"})
+def season_for_date(date_text):
+    parsed = date.fromisoformat(date_text)
+    # European and Israeli seasons begin in the second half of the calendar year.
+    return parsed.year if parsed.month >= 7 else parsed.year - 1
+
+
+def find_league(config, season):
+    rows = api_get("/leagues", {"country": config["country"], "season": season})
     matches = [row for row in rows if row.get("league", {}).get("name") in config["api_names"]]
     if not matches:
         return None
     row = matches[0]
-    current = [s for s in row.get("seasons", []) if s.get("current")]
-    if not current:
-        return None
+    matching_seasons = [s for s in row.get("seasons", []) if s.get("year") == season]
     return {
         "league_id": row["league"]["id"],
         "league_name": row["league"]["name"],
-        "season": current[0]["year"],
-        "coverage": current[0].get("coverage", {}),
+        "season": season,
+        "coverage": matching_seasons[0].get("coverage", {}) if matching_seasons else {},
     }
 
 
 def fixture_candidates(league, from_date, to_date):
-    rows, _, _ = api_get("/fixtures", {
-        "league": league["league_id"], "season": league["season"],
-        "from": from_date, "to": to_date, "status": "FT-AET-PEN",
+    return api_get("/fixtures", {
+        "league": league["league_id"],
+        "season": league["season"],
+        "from": from_date,
+        "to": to_date,
+        "status": "FT-AET-PEN",
     })
-    return rows
 
 
 def basic_score(fixture):
@@ -69,12 +75,11 @@ def basic_score(fixture):
 
 
 def stats_for_fixture(fixture_id):
-    rows, _, _ = api_get("/fixtures/statistics", {"fixture": fixture_id})
+    rows = api_get("/fixtures/statistics", {"fixture": fixture_id})
     parsed = {}
     for team_row in rows:
         team_name = team_row.get("team", {}).get("name")
-        stats = {item.get("type"): item.get("value") for item in team_row.get("statistics", [])}
-        parsed[team_name] = stats
+        parsed[team_name] = {item.get("type"): item.get("value") for item in team_row.get("statistics", [])}
     return parsed
 
 
@@ -83,9 +88,8 @@ def number(value):
         return None
     if isinstance(value, (int, float)):
         return float(value)
-    text = str(value).replace("%", "").strip()
     try:
-        return float(text)
+        return float(str(value).replace("%", "").strip())
     except ValueError:
         return None
 
@@ -96,20 +100,16 @@ def interest_score(fixture, stats):
     goals = fixture["goals"]
     home_goals, away_goals = goals.get("home") or 0, goals.get("away") or 0
     h, a = stats.get(home_name, {}), stats.get(away_name, {})
-    hg, ag = home_goals, away_goals
-    winner_home = hg > ag
-    winner_away = ag > hg
+    winner_home, winner_away = home_goals > away_goals, away_goals > home_goals
     score = basic_score(fixture)
-
     for metric, weight in [("Total Shots", 0.8), ("Shots on Goal", 1.4), ("Ball Possession", 0.25)]:
         hv, av = number(h.get(metric)), number(a.get(metric))
         if hv is None or av is None:
             continue
         if winner_home and hv < av:
-            score += min(abs(hv-av) * weight, 12)
+            score += min(abs(hv - av) * weight, 12)
         elif winner_away and av < hv:
-            score += min(abs(hv-av) * weight, 12)
-
+            score += min(abs(hv - av) * weight, 12)
     required = ["Total Shots", "Shots on Goal", "Ball Possession"]
     completeness = sum(1 for m in required if number(h.get(m)) is not None and number(a.get(m)) is not None)
     score += completeness * 5
@@ -117,7 +117,7 @@ def interest_score(fixture, stats):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dry-run weekly MatchLens selection")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--from-date")
     parser.add_argument("--to-date")
     args = parser.parse_args()
@@ -127,50 +127,42 @@ def main():
     last_saturday = last_sunday - timedelta(days=1)
     from_date = args.from_date or last_saturday.isoformat()
     to_date = args.to_date or last_sunday.isoformat()
+    season = season_for_date(from_date)
 
     print(f"MATCHLENS WEEKLY DRY RUN: {from_date} to {to_date}")
+    print(f"API season parameter: {season}")
     print("No files will be changed and no commits will be created.\n")
+
     report = []
     requests_used = 0
-
     try:
         for config in LEAGUES:
-            league = current_league(config)
+            league = find_league(config, season)
             requests_used += 1
             if not league:
-                report.append({"competition": config["label"], "status": "league_not_available"})
+                report.append({"competition": config["label"], "status": "league_not_available", "season": season})
                 continue
-
             fixtures = fixture_candidates(league, from_date, to_date)
             requests_used += 1
             if not fixtures:
-                report.append({"competition": config["label"], "status": "no_completed_fixtures"})
+                report.append({"competition": config["label"], "status": "no_completed_fixtures", "season": season})
                 continue
-
             shortlist = sorted(fixtures, key=basic_score, reverse=True)[:3]
             ranked = []
             for fixture in shortlist:
-                fixture_id = fixture["fixture"]["id"]
-                stats = stats_for_fixture(fixture_id)
+                stats = stats_for_fixture(fixture["fixture"]["id"])
                 requests_used += 1
                 score, completeness = interest_score(fixture, stats)
                 ranked.append((score, completeness, fixture))
-
             ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
             score, completeness, chosen = ranked[0]
             report.append({
-                "competition": config["label"],
-                "api_league": league["league_name"],
-                "league_id": league["league_id"],
-                "season": league["season"],
-                "status": "selected",
-                "fixture_id": chosen["fixture"]["id"],
-                "date": chosen["fixture"]["date"][:10],
-                "home": chosen["teams"]["home"]["name"],
-                "away": chosen["teams"]["away"]["name"],
+                "competition": config["label"], "api_league": league["league_name"],
+                "league_id": league["league_id"], "season": season, "status": "selected",
+                "fixture_id": chosen["fixture"]["id"], "date": chosen["fixture"]["date"][:10],
+                "home": chosen["teams"]["home"]["name"], "away": chosen["teams"]["away"]["name"],
                 "score": f"{chosen['goals'].get('home')}-{chosen['goals'].get('away')}",
-                "interest_score": score,
-                "core_stats_complete": completeness,
+                "interest_score": score, "core_stats_complete": completeness,
                 "shortlisted_fixtures": len(shortlist),
             })
     except (HTTPError, URLError, RuntimeError) as exc:
