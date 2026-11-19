@@ -1,0 +1,45 @@
+name: Weekly selection dry run
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_date:
+        description: "Start date (YYYY-MM-DD). Leave blank for last Saturday."
+        required: false
+        type: string
+      to_date:
+        description: "End date (YYYY-MM-DD). Leave blank for last Sunday."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: matchlens-weekly-dry-run
+  cancel-in-progress: true
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run weekly selection in dry-run mode
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FROM_DATE: ${{ inputs.from_date }}
+          TO_DATE: ${{ inputs.to_date }}
+        shell: bash
+        run: |
+          ARGS=()
+          if [ -n "$FROM_DATE" ]; then ARGS+=(--from-date "$FROM_DATE"); fi
+          if [ -n "$TO_DATE" ]; then ARGS+=(--to-date "$TO_DATE"); fi
+          python -m src.weekly_dry_run "${ARGS[@]}"
