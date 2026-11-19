@@ -1,0 +1,237 @@
+# ===========================================================
+#  הגדרות מנגנון התראות המשרות - אפשר לערוך הכול כאן
+# ===========================================================
+
+schedule:
+  timezone: Asia/Jerusalem
+  send_hours: [9, 16]          # שעות השליחה (שעון ישראל)
+
+gemini:
+  enabled: true                # חובה: בלי Gemini אי אפשר לאמת דרישות, ולכן לא יישלחו משרות
+  max_minutes: 15              # אחרי 15 דקות בלי מענה - המשרות שלא אומתו נשמרות בתור להרצה הבאה
+  # המודל הראשי: Gemini 3.8 Flash. המודלים הבאים ברשימה הם גיבוי בלבד,
+  # למקרה שהמכסה היומית של 3.8 Flash נגמרת (למחוק אותם אם לא רוצים גיבוי)
+  # מכסה יומית חינמית (RPD): 3.8 Flash = 20, 3.6 Flash = 20, 3.5 Flash Lite = 500
+  models: [gemini-3.8-flash, gemini-3.6-flash, gemini-3.5-flash-lite]
+  seconds_between_calls: 13    # מכסה חינמית = מעט בקשות לדקה, לא לשנות למטה מ-12
+  batch_size: 8                # כמה משרות מאומתות בכל קריאה (פחות קריאות = פחות מכסה)
+  max_jobs_to_score: 90        # תקרה למשרות שנבדקות לעומק בכל הרצה (השאר ממתינות בתור)
+
+min_score_to_send: 6           # משרות עם ציון 6 ומעלה נשלחות
+max_jobs_to_send: 25           # תקרה להודעות בכל סיכום
+
+# ---------- LinkedIn ----------
+linkedin:
+  enabled: true
+  location: Israel
+  hours_back: 24
+  pages_per_keyword: 2         # 25 משרות לעמוד
+  searches_per_run: 6          # בכל הרצה רק חלק מהחיפושים (בתורות) - פחות חסימות; כל חיפוש עדיין רץ פעם ביום
+  seconds_between_requests: 8  # LinkedIn חוסם (429) כשיש יותר מדי בקשות מהר
+  # אותם תחומים כמו קודם, מקובצים עם OR כדי לשלוח הרבה פחות בקשות ל-LinkedIn
+  keywords:
+    - '"Data Analyst" OR "BI Analyst" OR "Business Analyst" OR "Reporting Analyst" OR "Junior Analyst"'
+    - '"Systems Analyst" OR "Information Systems" OR "Implementation Specialist" OR ERP OR CRM OR SAP'
+    - '"Financial Analyst" OR "FP&A" OR "Budget Control" OR "Credit Analyst" OR "Risk Analyst" OR "Financial Systems Analyst"'
+    - '"Fraud Analyst" OR AML OR "Compliance Analyst" OR KYC OR Onboarding OR "Due Diligence"'
+    - '"Operations Analyst" OR "Finance Operations" OR "Payments Analyst" OR "Billing Analyst" OR "Revenue Analyst" OR "Reconciliation" OR FinOps'
+    - '"Banking Operations" OR "Investment Operations" OR "Trading Operations" OR "Technical Operations"'
+    - 'QA OR Validation OR Tester'
+    - '"Sports Data" OR "Sports Analyst" OR "Sports Analytics"'
+  # חיפושים רחבים עם הסינון "Entry level" של LinkedIn - משרות התחלתיות שקשורות ולו במעט לתחום
+  entry_level_keywords:
+    - 'Analyst OR Data OR "Information Systems" OR Systems OR ERP OR CRM'
+    - 'Operations OR Finance OR Banking OR Payments OR Risk OR Compliance'
+    - 'QA OR Testing OR Implementation OR Support OR Sports'
+
+# ---------- התראות מייל (LinkedIn / דרושים) ----------
+# הבוט קורא מ-Gmail את מיילי התראות המשרות (קריאה בלבד). צריך את הסודות GMAIL_ADDRESS ו-GMAIL_APP_PASSWORD.
+email_alerts:
+  enabled: true
+  days_back: 2
+  senders: [linkedin.com, drushim.co.il]
+
+# ---------- אתרי דרושים ישראליים ----------
+# {query} מוחלף במילת החיפוש. אם אתר מחזיר 0 משרות: חפש באתר בדפדפן,
+# העתק את כתובת תוצאות החיפוש, והחלף את מילת החיפוש ב-{query}.
+israeli_sites:
+  enabled: true
+  seconds_between_requests: 3
+  max_gemini_fallback_calls: 1   # אם לא נמצאו קישורים למשרות - Gemini ינסה לזהות אותם (חוסך מכסה)
+  sites:
+    - name: AllJobs
+      url: "https://www.alljobs.co.il/SearchResultsGuest.aspx?page=1&position=&type=&freetxt={query}&city=&region="
+      link_pattern: "(?i)JobID=(\\d+)"
+    - name: דרושים
+      url: "https://www.drushim.co.il/jobs/search/{query}/"
+      link_pattern: "drushim\\.co\\.il/job/(\\d+)"
+    - name: JobMaster
+      url: "https://www.jobmaster.co.il/jobs/?q={query}"
+      link_pattern: "(?i)checknum\\.asp\\?key=(\\d+)"
+  queries:
+    - אנליסט
+    - Data Analyst
+    - מערכות מידע
+    - BI
+    - QA
+    - אנליסט פיננסי
+    - תפעול פיננסי
+    - ג'וניור
+    - ללא ניסיון
+    - בוגרי תואר
+
+# ---------- דפי קריירה של חברות (ספורט / פיננסים) ----------
+# דוגמה (להסיר את ה-# ולהחליף בכתובת אמיתית):
+# - name: שם החברה
+#   url: "https://example.com/careers"
+#   link_pattern: "/careers/job/(\\d+)"    # לא חובה; בלי זה Gemini יזהה את המשרות
+career_pages: []
+
+# ---------- סינון מוקדם (חוסך מכסת AI) ----------
+# שלב א' (גילוי) מסנן רק דברים ודאיים: בכירות מובהקת, משרות סטודנט / חלקיות.
+# כל השאר עובר לבדיקת הדרישות המלאה.
+title_exclude:
+  - senior
+  - "sr."
+  - "sr "
+  - team lead
+  - tech lead
+  - head of
+  - director
+  - principal
+  - architect
+  - "vp "
+  - chief
+  - student
+  - intern
+  - part time
+  - part-time
+  - בכיר
+  - ראש צוות
+  - סמנכ
+  - מנהל מחלקה
+  - מנהל/ת מחלקה
+  - סטודנט
+  - משרה חלקית
+  - משמרות
+
+# מיקומים מחוץ למרכז (ב-LinkedIn מסונן מיד, באתרים אחרים ה-AI מסנן)
+location_exclude:
+  - haifa
+  - חיפה
+  - jerusalem
+  - ירושלים
+  - beer sheva
+  - "be'er sheva"
+  - beersheba
+  - באר שבע
+  - yokneam
+  - יקנעם
+  - caesarea
+  - קיסריה
+  - nazareth
+  - נצרת
+  - eilat
+  - אילת
+  - ashkelon
+  - אשקלון
+  - ashdod
+  - אשדוד
+  - karmiel
+  - כרמיאל
+  - afula
+  - עפולה
+  - tiberias
+  - טבריה
+  - dimona
+  - kiryat gat
+  - קרית גת
+  - migdal haemek
+  - northern district
+  - southern district
+  - haifa district
+  - jerusalem district
+
+# מילים בכותרת שמעידות שהתפקיד ברשימת היעד (לדירוג לפי מילות מפתח)
+target_title_words:
+  - analyst
+  - אנליסט
+  - "bi "
+  - " bi"
+  - power bi
+  - business intelligence
+  - data
+  - נתונים
+  - מערכות מידע
+  - information systems
+  - systems analyst
+  - מנתח מערכות
+  - implementation
+  - מיישם
+  - יישום
+  - erp
+  - crm
+  - sap
+  - qa
+  - בודק
+  - בדיקות
+  - validation
+  - tester
+  - fp&a
+  - budget
+  - תקציב
+  - risk
+  - סיכונים
+  - credit
+  - אשראי
+  - fraud
+  - הונאות
+  - aml
+  - compliance
+  - ציות
+  - kyc
+  - onboarding
+  - due diligence
+  - reconciliation
+  - התאמות
+  - payments
+  - תשלומים
+  - billing
+  - revenue
+  - finance operations
+  - financial
+  - פיננסי
+  - finops
+  - operations
+  - תפעול
+  - reporting
+  - דוחות
+  - technical operations
+  - business planner
+
+# תחומים מועדפים - בונוס קטן לציון
+bonus_words:
+  - fintech
+  - פינטק
+  - bank
+  - בנק
+  - investment
+  - השקעות
+  - insurance
+  - ביטוח
+  - sport
+  - ספורט
+  - trading
+
+# מילים בכותרת שמקבלות עדיפות כשיש יותר משרות מהתקרה
+priority_title_words:
+  - junior
+  - entry level
+  - entry-level
+  - no experience
+  - entry
+  - graduate
+  - associate
+  - ג'וניור
+  - בוגר
+  - ללא ניסיון
